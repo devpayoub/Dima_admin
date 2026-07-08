@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { TabBar } from '@/components/ui/TabBar';
 import { ArrowLeft, Store, Users, Megaphone, CreditCard, Edit, Trash2, Key, QrCode } from 'lucide-react';
 import type { Template, StoredTemplate } from '@/types';
 import { fromStoredTemplate, toStoredTemplate } from '@/lib/templateSerialization';
@@ -40,6 +42,9 @@ export default function UserDetailPage() {
   const [tierError, setTierError] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [revokingKeyId, setRevokingKeyId] = useState<string | null>(null);
+  const [isRevokingKey, setIsRevokingKey] = useState(false);
+  const [revokeKeyError, setRevokeKeyError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -185,14 +190,18 @@ export default function UserDetailPage() {
     }
   };
 
-  const handleDeleteLicenseKey = async (keyId: string) => {
-    if (!confirm('Are you sure you want to revoke this license key?')) return;
+  const handleDeleteLicenseKey = async () => {
+    if (!revokingKeyId) return;
     try {
-      setActionError('');
-      await adminApi.deleteLicenseKey(keyId);
-      setLicenseKeys(licenseKeys.filter(k => k.id !== keyId));
+      setRevokeKeyError('');
+      setIsRevokingKey(true);
+      await adminApi.deleteLicenseKey(revokingKeyId);
+      setLicenseKeys(licenseKeys.filter(k => k.id !== revokingKeyId));
+      setRevokingKeyId(null);
     } catch (err: any) {
-      setActionError(err.message || 'Failed to revoke license key');
+      setRevokeKeyError(err.message || 'Failed to revoke license key');
+    } finally {
+      setIsRevokingKey(false);
     }
   };
 
@@ -256,7 +265,7 @@ export default function UserDetailPage() {
     { header: 'Created', accessor: (row: AdminLicenseKey) => new Date(row.created_at).toLocaleDateString() },
     { header: 'Actions', accessor: (row: AdminLicenseKey) => (
       <button
-        onClick={() => handleDeleteLicenseKey(row.id)}
+        onClick={() => setRevokingKeyId(row.id)}
         className="p-2 text-muted hover:text-red-600 transition-colors"
         title="Revoke Key"
       >
@@ -341,32 +350,16 @@ export default function UserDetailPage() {
         </div>
       </div>
 
-      <div className="flex border-b border-border mb-6">
-        <button 
-          onClick={() => setActiveTab('campaigns')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'campaigns' ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-foreground'}`}
-        >
-          <Megaphone className="w-4 h-4" /> Campaigns ({campaigns.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('cards')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'cards' ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-foreground'}`}
-        >
-          <CreditCard className="w-4 h-4" /> Issued Cards ({cards.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('staff')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'staff' ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-foreground'}`}
-        >
-          <Users className="w-4 h-4" /> Staff Members ({staff.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('licenseKeys')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'licenseKeys' ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-foreground'}`}
-        >
-          <Key className="w-4 h-4" /> License Keys ({licenseKeys.length})
-        </button>
-      </div>
+      <TabBar
+        active={activeTab}
+        onChange={(key) => setActiveTab(key as typeof activeTab)}
+        tabs={[
+          { key: 'campaigns', label: 'Campaigns', icon: Megaphone, count: campaigns.length },
+          { key: 'cards', label: 'Issued Cards', icon: CreditCard, count: cards.length },
+          { key: 'staff', label: 'Staff Members', icon: Users, count: staff.length },
+          { key: 'licenseKeys', label: 'License Keys', icon: Key, count: licenseKeys.length },
+        ]}
+      />
 
       <div>
         {activeTab === 'campaigns' && <DataTable data={campaigns} columns={campaignCols} />}
@@ -404,23 +397,16 @@ export default function UserDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deletingCampaignId !== null} onOpenChange={(open) => !open && setDeletingCampaignId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Delete Campaign</DialogTitle>
-          </DialogHeader>
-          {deleteError && <ErrorBanner message={deleteError} />}
-          <p className="text-muted text-sm">
-            Are you sure you want to delete <strong>{campaigns.find(c => c.id === deletingCampaignId)?.name}</strong>? This action cannot be undone. Any issued cards for this campaign will remain active.
-          </p>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeletingCampaignId(null)} disabled={isDeletingCampaign}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteCampaign} disabled={isDeletingCampaign}>
-              {isDeletingCampaign ? 'Deleting...' : 'Yes, Delete Campaign'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deletingCampaignId !== null}
+        onOpenChange={(open) => { if (!open) setDeletingCampaignId(null); }}
+        onConfirm={handleDeleteCampaign}
+        title="Delete Campaign"
+        description={`Are you sure you want to delete ${campaigns.find(c => c.id === deletingCampaignId)?.name}? This action cannot be undone. Any issued cards for this campaign will remain active.`}
+        confirmLabel="Yes, Delete Campaign"
+        loading={isDeletingCampaign}
+        error={deleteError}
+      />
 
       <Dialog open={showTierModal} onOpenChange={setShowTierModal}>
         <DialogContent>
@@ -449,22 +435,27 @@ export default function UserDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Delete User</DialogTitle>
-          </DialogHeader>
-          <p className="text-muted text-sm">
-            Are you sure you want to delete <strong>{user.business_name || user.email}</strong>? This action cannot be undone. All campaigns, issued cards, and staff accounts associated with this user will be permanently removed.
-          </p>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowDeleteModal(false)} disabled={isDeleting}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Yes, Delete User'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        onConfirm={handleDeleteUser}
+        title="Delete User"
+        description={`Are you sure you want to delete ${user.business_name || user.email}? This action cannot be undone. All campaigns, issued cards, and staff accounts associated with this user will be permanently removed.`}
+        confirmLabel="Yes, Delete User"
+        loading={isDeleting}
+        error={actionError}
+      />
+
+      <ConfirmDialog
+        open={revokingKeyId !== null}
+        onOpenChange={(open) => { if (!open) setRevokingKeyId(null); }}
+        onConfirm={handleDeleteLicenseKey}
+        title="Revoke License Key"
+        description="Are you sure you want to revoke this license key? The associated app will lose access."
+        confirmLabel="Revoke Key"
+        loading={isRevokingKey}
+        error={revokeKeyError}
+      />
 
       {user && (
         <CampaignQrDialog

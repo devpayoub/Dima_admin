@@ -614,7 +614,7 @@ export function CardEditor({ initialTemplate, ownerId, onSave }: CardEditorProps
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 font-sans lg:flex lg:min-h-screen">
+    <div className="h-full bg-gray-50 font-sans lg:flex">
       <div className="flex order-1 w-full items-center justify-center bg-gray-100 p-6 lg:order-2 lg:flex-1 lg:p-12">
         <div className="relative mx-auto w-full max-w-[430px] lg:max-w-[380px]">
           <div className="h-[56dvh] min-h-[340px] max-h-[520px] w-full overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 shadow-lg lg:h-[750px] lg:max-h-none lg:rounded-[3rem] lg:shadow-none">
@@ -631,7 +631,7 @@ export function CardEditor({ initialTemplate, ownerId, onSave }: CardEditorProps
         </div>
       </div>
 
-      <div className="order-2 w-full bg-white p-4 pb-6 sm:p-6 lg:order-1 lg:h-screen lg:w-1/3 lg:border-r lg:p-10 lg:pb-10 lg:overflow-y-auto">
+      <div className="order-2 w-full bg-white p-4 pb-6 sm:p-6 lg:order-1 lg:h-full lg:w-1/3 lg:border-r lg:p-10 lg:pb-10 lg:overflow-hidden lg:flex lg:flex-col">
         <div className="mb-2 flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={handleCancel} className="rounded-full">
@@ -652,7 +652,7 @@ export function CardEditor({ initialTemplate, ownerId, onSave }: CardEditorProps
             </Button>
         </div>
 
-        <div className="px-3 sm:px-4 lg:flex-1 lg:overflow-y-auto lg:px-3 lg:pr-3 xl:px-4 lg:no-scrollbar">
+        <div className="px-3 sm:px-4 lg:flex-1 lg:overflow-y-auto lg:px-3 lg:pr-3 xl:px-4">
             <Accordion type="multiple" value={openSections} onValueChange={setOpenSections} className="w-full">
                 <AccordionItem value="general">
                     <AccordionTrigger>
@@ -1171,7 +1171,7 @@ export function CardEditor({ initialTemplate, ownerId, onSave }: CardEditorProps
             </Accordion>
         </div>
 
-        <div className="mt-8 border-t pt-6 lg:mt-auto lg:shrink-0">
+        <div className="mt-4 pt-4 shrink-0">
             {saveError && (
                 <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     {saveError}

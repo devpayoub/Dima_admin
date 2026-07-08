@@ -7,6 +7,10 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CampaignQrDialog } from '@/components/CampaignQrDialog';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { adminApi } from '@/lib/api/admin';
 
 interface CampaignRow {
   id: string;
@@ -44,24 +48,14 @@ export default function CampaignsPage() {
       setIsLoading(true);
       setError('');
 
-      const token = localStorage.getItem('STAMPEE_ADMIN_TOKEN');
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const usersRes = await fetch('/api/v1/admin/users', { headers });
-      if (!usersRes.ok) throw new Error('Failed to fetch users');
-      const usersData = await usersRes.json();
-      const users = usersData.owners || usersData.users || usersData || [];
+      const users = await adminApi.getUsers();
 
       const allCampaigns: CampaignRow[] = [];
 
       const campaignResults = await Promise.allSettled(
-        users.map(async (user: any) => {
-          const res = await fetch(`/api/v1/admin/users/${user.id}/campaigns`, { headers });
-          if (!res.ok) return [];
-          const data = await res.json();
-          const list = data.campaigns || data || [];
-          return list.map((c: any) => ({
+        users.map(async (user) => {
+          const list = await adminApi.getUserCampaigns(user.id);
+          return list.map((c) => ({
             id: c.id,
             name: c.name,
             reward_name: c.reward_name,
@@ -94,16 +88,7 @@ export default function CampaignsPage() {
 
   const handleToggle = async (campaignId: string, isEnabled: boolean) => {
     try {
-      const token = localStorage.getItem('STAMPEE_ADMIN_TOKEN');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(`/api/v1/admin/campaigns/${campaignId}/toggle`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ is_enabled: isEnabled }),
-      });
-      if (!res.ok) throw new Error('Failed to toggle');
+      await adminApi.toggleCampaign(campaignId, isEnabled);
       setCampaigns(campaigns.map(c => c.id === campaignId ? { ...c, is_enabled: isEnabled } : c));
     } catch (err: any) {
       setError(err.message || 'Failed to toggle campaign');
@@ -115,15 +100,7 @@ export default function CampaignsPage() {
     try {
       setDeleteError('');
       setIsDeleting(true);
-      const token = localStorage.getItem('STAMPEE_ADMIN_TOKEN');
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(`/api/v1/admin/campaigns/${deletingId}`, {
-        method: 'DELETE',
-        headers,
-      });
-      if (!res.ok) throw new Error('Failed to delete');
+      await adminApi.deleteCampaign(deletingId);
       setCampaigns(campaigns.filter(c => c.id !== deletingId));
       setDeletingId(null);
     } catch (err: any) {
@@ -162,7 +139,7 @@ export default function CampaignsPage() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="rounded-lg bg-rose-50 text-rose-600 p-4 text-sm border border-rose-100">{error}</div>
+        <ErrorBanner message={error} />
       </div>
     );
   }
@@ -179,11 +156,11 @@ export default function CampaignsPage() {
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
+          <Input
             placeholder="Search by name, owner, or reward..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex h-11 w-full rounded-md border border-input bg-background pl-10 pr-3.5 py-2 text-sm"
+            className="pl-10"
           />
         </div>
         <select
@@ -256,12 +233,10 @@ export default function CampaignsPage() {
                     <Badge variant={campaign.mode === 'points' ? 'warning' : 'default'}>{campaign.mode}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleToggle(campaign.id, !campaign.is_enabled)}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${campaign.is_enabled ? 'bg-green-500' : 'bg-gray-300'}`}
-                    >
-                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${campaign.is_enabled ? 'translate-x-5' : 'translate-x-1'}`} />
-                    </button>
+                    <Switch
+                      checked={campaign.is_enabled}
+                      onCheckedChange={(checked) => handleToggle(campaign.id, checked)}
+                    />
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {new Date(campaign.created_at).toLocaleDateString()}
@@ -310,7 +285,7 @@ export default function CampaignsPage() {
           <DialogHeader>
             <DialogTitle className="text-red-600">Delete Campaign</DialogTitle>
           </DialogHeader>
-          {deleteError && <div className="rounded-lg bg-rose-50 text-rose-600 p-3 text-sm border border-rose-100">{deleteError}</div>}
+          {deleteError && <ErrorBanner message={deleteError} />}
           <p className="text-muted-foreground text-sm">
             Are you sure you want to delete <strong>{campaigns.find(c => c.id === deletingId)?.name}</strong>? This action cannot be undone.
           </p>

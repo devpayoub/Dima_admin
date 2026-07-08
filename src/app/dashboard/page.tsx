@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminApi, type AdminStats } from '@/lib/api/admin';
 import { StatCard } from '@/components/ui/StatCard';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { Users, Megaphone, CreditCard, Stamp } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -26,7 +27,11 @@ export default function DashboardPage() {
   }, [router]);
 
   if (error) {
-    return <div className="p-8 text-red-600">{error}</div>;
+    return (
+      <div className="p-8">
+        <ErrorBanner message={error} />
+      </div>
+    );
   }
 
   if (!stats) {

@@ -37,16 +37,17 @@ export interface AdminCampaign {
   is_enabled: boolean;
   mode?: 'stamps' | 'points';
   created_at: string;
-  description?: string;
-  tagline?: string;
-  background_image?: string;
-  background_opacity?: number;
-  logo_image?: string;
-  show_logo?: boolean;
-  title_size?: string;
+  owner_id?: string;
+  description?: string | null;
+  tagline?: string | null;
+  background_image?: string | null;
+  background_opacity?: number | null;
+  logo_image?: string | null;
+  show_logo?: boolean | null;
+  title_size?: string | null;
   icon_key: string;
   colors: ThemeColors;
-  social?: Record<string, string>;
+  social?: Record<string, string> | null;
 }
 
 export interface AdminIssuedCard {

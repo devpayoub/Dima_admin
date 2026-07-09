@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import type { Template } from '@/types';
 import { templates } from '@/data/templates';
 import { LoyaltyCard } from '@/components/LoyaltyCard';
@@ -162,7 +162,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({ onSelect }) => {
           onClick={() => setSelectedMode(null)}
           className="text-sm font-medium text-muted hover:text-foreground transition-colors"
         >
-          ← Back
+          â† Back
         </button>
         <div>
           <h2 className="text-xl font-bold text-foreground">

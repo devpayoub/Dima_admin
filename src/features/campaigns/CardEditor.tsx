@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+﻿import { useRef, useState } from 'react';
 import type { Template } from '@/types';
 import { LoyaltyCard } from '@/components/LoyaltyCard';
 import { Button } from '@/components/ui/button';

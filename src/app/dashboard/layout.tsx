@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
-import { Sidebar } from '@/components/Sidebar';
-import { AdminAuthGuard } from '@/components/AdminAuthGuard';
+import { Sidebar } from '@/features/dashboard/Sidebar';
+import { AdminAuthGuard } from '@/features/auth/AdminAuthGuard';
 
 export default function DashboardLayout({
   children,

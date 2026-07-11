@@ -292,7 +292,7 @@ export default function UserDetailPage() {
               <p className="text-muted">{user.email}</p>
             </div>
             <div className="flex gap-2">
-              <Badge variant={['premium', 'pro'].includes(user.tier) ? 'success' : user.tier === 'popular' ? 'warning' : 'default'}>{user.tier ? user.tier.toUpperCase() : 'FREE'} PLAN</Badge>
+              <Badge variant={user.tier === 'premium' ? 'success' : user.tier === 'popular' ? 'warning' : 'default'}>{user.tier ? user.tier.toUpperCase() : 'STANDARD'} PLAN</Badge>
               {user.is_admin && <Badge variant="warning">ADMIN</Badge>}
             </div>
           </div>
@@ -419,7 +419,6 @@ export default function UserDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="tier-select">Plan / Tier</Label>
               <select name="tier" id="tier-select" defaultValue={user.tier} className="w-full p-2 border border-border rounded-lg bg-background">
-                <option value="free">Free</option>
                 <option value="standard">Standard</option>
                 <option value="popular">Popular</option>
                 <option value="premium">Premium</option>

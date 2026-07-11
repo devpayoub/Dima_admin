@@ -74,7 +74,7 @@ export default function UsersPage() {
       u.business_name || u.email.split('@')[0],
       u.email,
       u.slug,
-      u.tier || 'free',
+      u.tier || 'standard',
       u.status || 'unverified',
       u.access || 'active',
       u.is_admin ? 'Yes' : 'No',
@@ -104,8 +104,8 @@ export default function UsersPage() {
     { 
       header: 'Plan', 
       accessor: (row: AdminUser) => (
-        <Badge variant={['premium', 'pro'].includes(row.tier) ? 'success' : row.tier === 'popular' ? 'warning' : 'default'}>
-          {row.tier ? row.tier.toUpperCase() : 'FREE'}
+        <Badge variant={row.tier === 'premium' ? 'success' : row.tier === 'popular' ? 'warning' : 'default'}>
+          {row.tier ? row.tier.toUpperCase() : 'STANDARD'}
         </Badge>
       )
     },
@@ -220,7 +220,6 @@ export default function UsersPage() {
             <div className="space-y-2">
               <Label htmlFor="tier">Plan / Tier</Label>
               <select name="tier" id="tier" defaultValue="standard" className="flex h-11 w-full rounded-md border border-input bg-background px-3.5 py-2 text-sm">
-                <option value="free">Free</option>
                 <option value="standard">Standard</option>
                 <option value="popular">Popular</option>
                 <option value="premium">Premium</option>
